@@ -52,6 +52,9 @@ enum
 
 	// Do not generate kill message
 	DEATH_NO_KILL_MSG = 32,
+
+	// Do not generate reason message
+	DEATH_NO_REASON = 64,
 };
 
 // for OnCharacterTakeDamage
@@ -315,7 +318,7 @@ public:
 	enum
 	{
 		TIMER_INFINITE = -1,
-		TIMER_END = 10,
+		TIMER_END = 7,
 	};
 
 	void TryStartWarmup(bool FallbackToWarmup = false);

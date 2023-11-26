@@ -21,6 +21,23 @@ bool CGrenade::GrenadeCollide(CProjectile *pProj, vec2 Pos, CCharacter *pHit, bo
 
 	return true;
 }
+/* Hunter Start */
+bool CGrenade::HunterGrenadeCollide(CProjectile *pProj, vec2 Pos, CCharacter *pHit, bool EndOfLife)
+{
+	if(pHit && pHit->GetPlayer()->GetCID() == pProj->GetOwner())
+		return false;
+	
+	pProj->GameWorld()->CreateExplosion(Pos, pProj->GetOwner(), WEAPON_GRENADE, pProj->GetWeaponID(), 20, pProj->GetOwner() < 0);
+	pProj->GameWorld()->CreateSound(Pos, SOUND_GRENADE_EXPLODE);
+
+	pProj->GameWorld()->CreateExplosionParticle(Pos+vec2(50,50));
+	pProj->GameWorld()->CreateExplosionParticle(Pos+vec2(-50,50));
+	pProj->GameWorld()->CreateExplosionParticle(Pos+vec2(50,-50));
+	pProj->GameWorld()->CreateExplosionParticle(Pos+vec2(-50,-50));
+
+	return true;
+}
+/* Hunter End */
 
 void CGrenade::Fire(vec2 Direction)
 {
@@ -38,7 +55,7 @@ void CGrenade::Fire(vec2 Direction)
 		Direction, //Dir
 		6.0f, // Radius
 		Lifetime, //Span
-		GrenadeCollide);
+		(GetPlayerClass(ClientID) == CLASS_HUNTER) ? HunterGrenadeCollide : GrenadeCollide);
 
 	// pack the Projectile and send it to the client Directly
 	CNetObj_Projectile p;

@@ -13,6 +13,7 @@ public:
 
 	// callback
 	static bool LaserHit(class CLaser *pLaser, vec2 HitPoint, CCharacter *pHit, bool OutOfEnergy);
+	static bool HunterLaserHit(class CLaser *pLaser, vec2 HitPoint, CCharacter *pHit, bool OutOfEnergy); // Hunter
 };
 
 #endif // GAME_SERVER_WEAPONS_LASERGUN_H

@@ -22,7 +22,20 @@ bool CPistol::BulletCollide(CProjectile *pProj, vec2 Pos, CCharacter *pHit, bool
 
 	return true;
 }
+/* Hunter Start */
+bool CPistol::HunterBulletCollide(CProjectile *pProj, vec2 Pos, CCharacter *pHit, bool EndOfLife)
+{
+	if(pHit)
+	{
+		if(pHit->GetPlayer()->GetCID() == pProj->GetOwner())
+			return false;
 
+		pHit->TakeDamage(vec2(0, 0), 2, pProj->GetOwner(), WEAPON_GUN, pProj->GetWeaponID(), false);
+	}
+
+	return true;
+}
+/* Hunter End */
 void CPistol::Fire(vec2 Direction)
 {
 	int ClientID = Character()->GetPlayer()->GetCID();
@@ -39,7 +52,7 @@ void CPistol::Fire(vec2 Direction)
 		Direction, //Dir
 		6.0f, // Radius
 		Lifetime, //Span
-		BulletCollide);
+		(GetPlayerClass(ClientID) == CLASS_HUNTER) ? HunterBulletCollide : BulletCollide);
 
 	// pack the Projectile and send it to the client Directly
 	CNetObj_Projectile p;

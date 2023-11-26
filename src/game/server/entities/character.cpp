@@ -630,7 +630,10 @@ void CCharacter::Die(int Killer, int Weapon)
 	int ModeSpecial = DeathFlag & (DEATH_KILLER_HAS_FLAG | DEATH_VICTIM_HAS_FLAG);
 
 	if(!(DeathFlag & DEATH_NO_KILL_MSG))
-		Controller()->SendKillMsg(Killer, m_pPlayer->GetCID(), Weapon, ModeSpecial);
+		Controller()->SendKillMsg((DeathFlag & DEATH_NO_REASON) ? m_pPlayer->GetCID() : Killer, // Hunter
+			m_pPlayer->GetCID(),
+				(DeathFlag & DEATH_NO_REASON) ? WEAPON_WORLD : Weapon, // Hunter 如果DEATH_NO_REASON 就只提示死人
+					ModeSpecial);
 
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "kill killer='%d:%s' victim='%d:%s' weapon=%d special=%d",

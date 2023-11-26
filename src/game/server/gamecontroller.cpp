@@ -760,7 +760,7 @@ void IGameController::OnInternalEntity(int Index, vec2 Pos, int Layer, int Flags
 	}
 	else if(Index == ENTITY_CRAZY_SHOTGUN_EX)
 	{
-		int Dir;
+		/*int Dir;
 		if(!Flags)
 			Dir = 0;
 		else if(Flags == ROTATION_90)
@@ -770,7 +770,8 @@ void IGameController::OnInternalEntity(int Index, vec2 Pos, int Layer, int Flags
 		else
 			Dir = 3;
 		float Deg = Dir * (pi / 2);
-		// MYTODO: add back ddnet freeze bullet
+		*/
+		// MYTODO: add back ddnet freeze bulletz	
 		// CProjectile *bullet = new CProjectile(
 		// 	GameWorld(),
 		// 	WEAPON_SHOTGUN, //Type
@@ -789,7 +790,7 @@ void IGameController::OnInternalEntity(int Index, vec2 Pos, int Layer, int Flags
 	}
 	else if(Index == ENTITY_CRAZY_SHOTGUN)
 	{
-		int Dir;
+		/*int Dir;
 		if(!Flags)
 			Dir = 0;
 		else if(Flags == (TILEFLAG_ROTATE))
@@ -798,7 +799,7 @@ void IGameController::OnInternalEntity(int Index, vec2 Pos, int Layer, int Flags
 			Dir = 2;
 		else
 			Dir = 3;
-		float Deg = Dir * (pi / 2);
+		float Deg = Dir * (pi / 2);*/
 		// CProjectile *bullet = new CProjectile(
 		// 	GameWorld(),
 		// 	WEAPON_SHOTGUN, //Type
@@ -1671,7 +1672,7 @@ void IGameController::FakeClientBroadcast(int SnappingClient)
 	if(IsPlayerReadyMode() && m_NumPlayerNotReady > 0)
 	{
 		char aBuf[128];
-		bool PlayerNeedToReady = pPlayer->GetTeam() != TEAM_SPECTATORS && pPlayer->m_IsReadyToPlay;
+		// bool PlayerNeedToReady = pPlayer->GetTeam() != TEAM_SPECTATORS && pPlayer->m_IsReadyToPlay;
 		if(m_NumPlayerNotReady == 1)
 			str_format(aBuf, sizeof(aBuf), "%s\n\n\n%d player not ready", pPlayer->m_IsReadyToPlay ? "" : "Say '/r' to ready", m_NumPlayerNotReady);
 		else

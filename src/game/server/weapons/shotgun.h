@@ -13,6 +13,7 @@ public:
 
 	// callback
 	static bool BulletCollide(class CProjectile *pProj, vec2 Pos, CCharacter *pHit, bool EndOfLife);
+	static bool HunterBulletCollide(class CProjectile *pProj, vec2 Pos, CCharacter *pHit, bool EndOfLife); // Hunter
 };
 
 #endif // GAME_SERVER_WEAPONS_SHOTGUN_H
