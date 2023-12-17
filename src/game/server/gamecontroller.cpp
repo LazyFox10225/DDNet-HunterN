@@ -419,6 +419,8 @@ IGameController::IGameController()
 
 	m_pInstanceConsole->RegisterPrintCallback(IConsole::OUTPUT_LEVEL_STANDARD, InstanceConsolePrint, this);
 
+	
+	INSTANCE_CONFIG_INT(&m_TournamentChat, "tournament_chat", 0, 0, 2, CFGFLAG_CHAT | CFGFLAG_INSTANCE, "Tournament chat mode, 0 = disabled, 1 = spectator can't send global chat, 2 = all players can only send team chat")
 	INSTANCE_CONFIG_INT(&m_Warmup, "warmup", 10, 0, 1000, CFGFLAG_CHAT | CFGFLAG_INSTANCE, "Number of seconds to do warmup before match starts");
 	INSTANCE_CONFIG_INT(&m_Countdown, "countdown", 0, -1000, 1000, CFGFLAG_CHAT | CFGFLAG_INSTANCE, "Number of seconds to freeze the game in a countdown before match starts, (-: for survival, +: for all")
 	INSTANCE_CONFIG_INT(&m_Teamdamage, "teamdamage", 0, 0, 2, CFGFLAG_CHAT | CFGFLAG_INSTANCE, "Team damage (1 = half damage, 2 = full damage)")
@@ -2873,7 +2875,7 @@ void IGameController::SendBroadcast(const char *pText, int ClientID, bool IsImpo
 			GameServer()->SendBroadcast(pText, i, IsImportant);
 }
 
-void IGameController::SendKillMsg(int Killer, int Victim, int Weapon, int ModeSpecial) const
+/*void IGameController::SendKillMsg(int Killer, int Victim, int Weapon, int ModeSpecial) const
 {
 	// send the kill message
 	CNetMsg_Sv_KillMsg Msg;
@@ -2887,7 +2889,7 @@ void IGameController::SendKillMsg(int Killer, int Victim, int Weapon, int ModeSp
 		if(GetPlayerIfInRoom(i))
 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i);
 	}
-}
+}*/
 
 void IGameController::InstanceConsolePrint(const char *pStr, void *pUser)
 {

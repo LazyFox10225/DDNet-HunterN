@@ -1630,10 +1630,10 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			else
 			{
 				SGameInstance Instance = PlayerGameInstance(pPlayer->GetCID());
-				if(Instance.m_IsCreated && !Instance.m_pController->IsTeamplay() && g_Config.m_SvTournamentChat == 2)
+				if(Instance.m_IsCreated && !Instance.m_pController->IsTeamplay() && Instance.m_pController->m_TournamentChat == 2)
 					return;
 
-				if(g_Config.m_SvTournamentChat == 2 || (g_Config.m_SvTournamentChat == 1 && pPlayer->GetTeam() == TEAM_SPECTATORS))
+				if(Instance.m_pController->m_TournamentChat == 2 || (Instance.m_pController->m_TournamentChat == 1 && pPlayer->GetTeam() == TEAM_SPECTATORS))
 					IsTeam = true;
 
 				int ChatTeam = IsTeam ? pPlayer->GetTeam() : CHAT_ALL;
@@ -3487,14 +3487,14 @@ void CGameContext::WhisperID(int ClientID, int VictimID, const char *pMessage)
 		return;
 
 	SGameInstance Instance = PlayerGameInstance(ClientID);
-	if(Instance.m_IsCreated && !Instance.m_pController->IsTeamplay() && g_Config.m_SvTournamentChat == 2)
+	if(Instance.m_IsCreated && !Instance.m_pController->IsTeamplay() && Instance.m_pController->m_TournamentChat == 2)
 		return;
 
-	if(g_Config.m_SvTournamentChat > 0)
+	if(Instance.m_pController->m_TournamentChat > 0)
 	{
 		if(m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS || m_apPlayers[VictimID]->GetTeam() == TEAM_SPECTATORS)
 			return;
-		if(g_Config.m_SvTournamentChat == 2 && m_apPlayers[ClientID]->GetTeam() != m_apPlayers[VictimID]->GetTeam())
+		if(Instance.m_pController->m_TournamentChat == 2 && m_apPlayers[ClientID]->GetTeam() != m_apPlayers[VictimID]->GetTeam())
 			return;
 		if(m_apPlayers[ClientID]->GetTeam() != TEAM_SPECTATORS && GetPlayerDDRTeam(ClientID) != GetPlayerDDRTeam(VictimID))
 			return;

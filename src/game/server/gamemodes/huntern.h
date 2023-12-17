@@ -8,20 +8,32 @@ class CGameControllerHunterN : public IGameController
 {
 private:
 	void SelectClass();
-	void ClassWin(int Class);
+	void ClassWin(int Flag);
 	void DoWincheckClass();
 
 	int m_HunterRatio;
 	int m_BroadcastHunterList;
 	int m_BroadcastHunterDeath;
 	int m_Wincheckdeley;
+	int m_GameoverTime;
 	//int m_RoundMode;
 
-	int DoWinchenkClassTick;
+	int nHunter; // 有多少个猎人
+	int DoWinchenkClassTick; // 终局判断延迟的Tick
 	char HunterList[256];
+
+	enum HUNTERN_WINFLAG
+	{
+		FLAG_WIN_NONE = 0,
+		FLAG_WIN_CIVIC = 1,
+		FLAG_WIN_HUNTER = 2,
+		FLAG_WIN_JUG = 4,
+	};
 
 public:
 	CGameControllerHunterN();
+
+	void OnClassSpawn(CCharacter *pChr);
 
 	virtual void OnCharacterSpawn(class CCharacter *pChr) override;
 	virtual void OnWorldReset() override;

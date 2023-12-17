@@ -151,6 +151,7 @@ void CPlayer::GameReset()
 
 	m_Class = 0; // Hunter
 	m_CanHunter = false; // Hunter
+	m_HiddenScore = 0; // Hunter
 }
 static int PlayerFlags_SevenToSix(int Flags)
 {
@@ -1165,5 +1166,10 @@ void CPlayer::SetClass(int Class)
 void CPlayer::SetCanHunter(bool CanHunter)
 {
 	m_CanHunter = CanHunter;
+}
+
+void CPlayer::SetHiddenScore(int HiddenScore)
+{
+	m_HiddenScore = HiddenScore;
 }
 /* Hunter End */

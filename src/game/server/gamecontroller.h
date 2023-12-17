@@ -283,6 +283,7 @@ public:
 	IConsole *InstanceConsole() const { return m_pInstanceConsole; }
 
 	// common config
+	int m_TournamentChat;
 	int m_Warmup;
 	int m_Countdown;
 	int m_Teamdamage;
@@ -416,7 +417,7 @@ public:
 	// Instance Space Ops
 	void SendChatTarget(int To, const char *pText, int Flags = 3) const;
 	void SendBroadcast(const char *pText, int ClientID, bool IsImportant = true) const;
-	void SendKillMsg(int Killer, int Victim, int Weapon, int ModeSpecial = 0) const;
+	//void SendKillMsg(int Killer, int Victim, int Weapon, int ModeSpecial = 0) const;
 
 	// helpers
 	bool IsDDNetEntity(int Index) const;

@@ -266,6 +266,10 @@ public:
 	bool m_CanHunter;
 	bool GetCanHunter() const { return m_CanHunter; }
 	void SetCanHunter(bool CanHunter);
+
+	int m_HiddenScore;
+	int GetHiddenScore() const { return m_HiddenScore; }
+	void SetHiddenScore(int HiddenScore);
 	/* Hunter End */
 };
 

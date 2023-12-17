@@ -2,6 +2,8 @@
 #include <game/generated/server_data.h>
 #include <game/server/entities/projectile.h>
 
+#include <game/server/weapons/shotgun.h>
+
 CGrenade::CGrenade(CCharacter *pOwnerChar) :
 	CWeapon(pOwnerChar)
 {
@@ -34,6 +36,8 @@ bool CGrenade::HunterGrenadeCollide(CProjectile *pProj, vec2 Pos, CCharacter *pH
 	pProj->GameWorld()->CreateExplosionParticle(Pos+vec2(-50,50));
 	pProj->GameWorld()->CreateExplosionParticle(Pos+vec2(50,-50));
 	pProj->GameWorld()->CreateExplosionParticle(Pos+vec2(-50,-50));
+
+	pProj->CreateFragment(pProj->GetOwner(), Pos, CShotgun::BulletCollide);
 
 	return true;
 }
