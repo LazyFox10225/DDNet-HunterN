@@ -364,21 +364,3 @@ void CProjectile::Destroy()
 		m_CustomData.m_Callback(m_CustomData.m_pData);
 	CEntity::Destroy();
 }
-
-void CProjectile::CreateFragment(int ClientID, vec2 Pos, FProjectileImpactCallback Callback)
-{
-	for(int i = 0; i < 18; i++)
-	{
-		float a = (rand()%314)/5.0;
-		CProjectile *pProj = new CProjectile(
-			GameWorld(),
-			WEAPON_SHOTGUN, //Type
-			m_WeaponID, //WeaponID
-			ClientID, //Owner
-			Pos + vec2(cosf(a), sinf(a)), //Pos
-			vec2(cosf(a), sinf(a)) * 0.5, //Dir
-			6.0f, // Radius
-			0.2 * Server()->TickSpeed(), //Span
-			Callback);
-	}
-}

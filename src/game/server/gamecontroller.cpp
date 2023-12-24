@@ -341,7 +341,7 @@ static void ConChangeGameType(IConsole::IResult *pResult, void *pUserData)
 int IGameController::MakeGameFlag(int GameFlag)
 {
 	int Flags = 0;
-	if(GameFlag & IGF_TEAMS)
+	if(GameFlag & (IGF_TEAMS | IGF_MARK_TEAMS)) // Hunter
 		Flags |= GAMEFLAG_TEAMS;
 	if(GameFlag & IGF_FLAGS)
 		Flags |= GAMEFLAG_FLAGS;
@@ -413,6 +413,8 @@ IGameController::IGameController()
 	m_NumVoteOptions = 0;
 	m_ResendVotes = false;
 	m_NumPlayerNotReady = 0;
+
+	m_HuntFragsNum = 18; // Hunter
 
 	// fake client broadcast
 	mem_zero(m_aFakeClientBroadcast, sizeof(m_aFakeClientBroadcast));

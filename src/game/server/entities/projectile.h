@@ -70,8 +70,6 @@ public:
 	bool FillExtraInfo(CNetObj_DDNetProjectile *pProj);
 
 	void *GetCustomData() { return m_CustomData.m_pData; }
-
-	void CreateFragment(int ClientID, vec2 Pos, FProjectileImpactCallback Callback); // Hunter
 };
 
 #endif

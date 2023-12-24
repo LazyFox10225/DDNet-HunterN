@@ -256,6 +256,10 @@ protected:
 		// ideal for controlling your own gameplay
 		// while letting clients show player count
 		IGF_MARK_SURVIVAL = 128,
+
+		// mark the game as teamplay even if it isn't
+		// ideal for controlling your own gameplay
+		IGF_MARK_TEAMS = 256, // Hunter
 	};
 	int m_GameFlags;
 	const char *m_pGameType;
@@ -299,6 +303,7 @@ public:
 	int m_ResetOnMatchEnd;
 	int m_PausePerMatch;
 	int m_MinimumPlayers;
+	int m_HuntFragsNum; // Hunter
 
 	// mega map stuff
 	char m_aMap[128];

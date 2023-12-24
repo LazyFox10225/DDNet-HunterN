@@ -270,6 +270,8 @@ public:
 	int m_HiddenScore;
 	int GetHiddenScore() const { return m_HiddenScore; }
 	void SetHiddenScore(int HiddenScore);
+
+	void SetTeamDiractly(int Team);
 	/* Hunter End */
 };
 

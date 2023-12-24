@@ -1172,4 +1172,9 @@ void CPlayer::SetHiddenScore(int HiddenScore)
 {
 	m_HiddenScore = HiddenScore;
 }
+
+void CPlayer::SetTeamDiractly(int Team)
+{
+	m_Team = Team;
+}
 /* Hunter End */

@@ -1,8 +1,8 @@
-#include "hammer.h"
+#include "jughammer.h"
 #include <game/generated/server_data.h>
 #include <game/server/entities/projectile.h>
 
-CHammer::CHammer(CCharacter *pOwnerChar) :
+CJugHammer::CJugHammer(CCharacter *pOwnerChar) :
 	CWeapon(pOwnerChar)
 {
 	m_MaxAmmo = g_pData->m_Weapons.m_aId[WEAPON_HAMMER].m_Maxammo;
@@ -10,7 +10,7 @@ CHammer::CHammer(CCharacter *pOwnerChar) :
 	m_FireDelay = g_pData->m_Weapons.m_aId[WEAPON_HAMMER].m_Firedelay;
 }
 
-void CHammer::Fire(vec2 Direction)
+void CJugHammer::Fire(vec2 Direction)
 {
 	int ClientID = Character()->GetPlayer()->GetCID();
 	GameWorld()->CreateSound(Pos(), SOUND_HAMMER_FIRE);
@@ -20,11 +20,24 @@ void CHammer::Fire(vec2 Direction)
 	if(Character()->IsSolo() || Character()->m_Hit & CCharacter::DISABLE_HIT_HAMMER)
 		return;
 
-	vec2 HammerHitPos = Pos() + Direction * GetProximityRadius() * 0.75f;
+	vec2 HammerHitPos = Pos() + Direction * GetProximityRadius() * 3.25f;
+
+	int Hits = 0;
+	CProjectile *apEntsProj[16];
+	int Num = GameWorld()->FindEntities(HammerHitPos, GetProximityRadius() * 100.0f, (CEntity **)apEntsProj,
+		16, CGameWorld::ENTTYPE_PROJECTILE);
+
+	for(int i = 0; i < Num; ++i)
+	{
+		CProjectile *pTargetProj = apEntsProj[i];
+
+		GameWorld()->CreateExplosionParticle(pTargetProj->m_Pos);
+
+		Hits++;
+	}
 
 	CCharacter *apEnts[MAX_CLIENTS];
-	int Hits = 0;
-	int Num = GameWorld()->FindEntities(HammerHitPos, GetProximityRadius() * 0.5f, (CEntity **)apEnts,
+	Num = GameWorld()->FindEntities(HammerHitPos, GetProximityRadius() * 2.5f, (CEntity **)apEnts,
 		MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
 
 	for(int i = 0; i < Num; ++i)
@@ -53,8 +66,7 @@ void CHammer::Fire(vec2 Direction)
 		Temp = ClampVel(pTarget->m_MoveRestrictions, Temp);
 		Temp -= pTarget->Core()->m_Vel;
 
-		pTarget->TakeDamage((vec2(0.f, -1.0f) + Temp) * Strength, (GetPlayerClass(ClientID) == CLASS_HUNTER) ? 20 : g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage, // Hunter
-			ClientID, WEAPON_HAMMER, GetWeaponID(), false);
+		pTarget->TakeDamage((vec2(0.f, -1.0f) + Temp) * Strength, (GetPlayerClass(ClientID) == CLASS_HUNTER) ? 20 : g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage, ClientID, WEAPON_HAMMER, GetWeaponID(), false); // Hunter
 
 		GameServer()->Antibot()->OnHammerHit(ClientID);
 

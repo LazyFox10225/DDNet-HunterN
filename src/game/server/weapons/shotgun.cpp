@@ -18,25 +18,12 @@ bool CShotgun::BulletCollide(CProjectile *pProj, vec2 Pos, CCharacter *pHit, boo
 		if(pHit->GetPlayer()->GetCID() == pProj->GetOwner())
 			return false;
 
-		pHit->TakeDamage(vec2(0, 0), g_pData->m_Weapons.m_Shotgun.m_pBase->m_Damage, pProj->GetOwner(), WEAPON_SHOTGUN, pProj->GetWeaponID(), false);
+		pHit->TakeDamage(vec2(0, 0), (pProj->GameServer()->m_apPlayers[pProj->GetOwner()]->GetClass() == CLASS_HUNTER) ? 2 : g_pData->m_Weapons.m_Shotgun.m_pBase->m_Damage, // Hunter
+			pProj->GetOwner(), WEAPON_SHOTGUN, pProj->GetWeaponID(), false);
 	}
 
 	return true;
 }
-/* Hunter Start */
-bool CShotgun::HunterBulletCollide(CProjectile *pProj, vec2 Pos, CCharacter *pHit, bool EndOfLife)
-{
-	if(pHit)
-	{
-		if(pHit->GetPlayer()->GetCID() == pProj->GetOwner())
-			return false;
-
-		pHit->TakeDamage(vec2(0, 0), 2, pProj->GetOwner(), WEAPON_SHOTGUN, pProj->GetWeaponID(), false);
-	}
-
-	return true;
-}
-/* Hunter End */
 
 void CShotgun::Fire(vec2 Direction)
 {
@@ -65,7 +52,7 @@ void CShotgun::Fire(vec2 Direction)
 			vec2(cosf(a), sinf(a)) * Speed, //Dir
 			6.0f, // Radius
 			Lifetime, //Span
-			(GetPlayerClass(ClientID) == CLASS_HUNTER) ? HunterBulletCollide : BulletCollide);
+			BulletCollide);
 
 		// pack the Projectile and send it to the client Directly
 		CNetObj_Projectile p;

@@ -13,7 +13,6 @@ public:
 
 	// callback
 	static bool GrenadeCollide(class CProjectile *pProj, vec2 Pos, CCharacter *pHit, bool EndOfLife);
-	static bool HunterGrenadeCollide(class CProjectile *pProj, vec2 Pos, CCharacter *pHit, bool EndOfLife); // Hunter
 };
 
 #endif // GAME_SERVER_WEAPONS_GRENATE_H

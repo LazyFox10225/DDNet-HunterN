@@ -21,27 +21,44 @@ bool CGrenade::GrenadeCollide(CProjectile *pProj, vec2 Pos, CCharacter *pHit, bo
 	pProj->GameWorld()->CreateExplosion(Pos, pProj->GetOwner(), WEAPON_GRENADE, pProj->GetWeaponID(), g_pData->m_Weapons.m_aId[WEAPON_GRENADE].m_Damage, pProj->GetOwner() < 0);
 	pProj->GameWorld()->CreateSound(Pos, SOUND_GRENADE_EXPLODE);
 
+	/* Hunter Start */
+	if(pProj->GameServer()->m_apPlayers[pProj->GetOwner()]->GetClass() == CLASS_HUNTER)
+	{
+		pProj->GameWorld()->CreateExplosionParticle(Pos+vec2(50,50)); // Create Particle
+		pProj->GameWorld()->CreateExplosionParticle(Pos+vec2(-50,50));
+		pProj->GameWorld()->CreateExplosionParticle(Pos+vec2(50,-50));
+		pProj->GameWorld()->CreateExplosionParticle(Pos+vec2(-50,-50));
+
+		CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
+		Msg.AddInt(pProj->Controller()->m_HuntFragsNum);
+
+		for(int i = 0; i < pProj->Controller()->m_HuntFragsNum; i++) // Create Fragments
+		{
+			float a = (rand()%314)/5.0;
+			vec2 d = vec2(cosf(a), sinf(a));
+			CProjectile *pProjFrag = new CProjectile(
+				pProj->GameWorld(),
+				WEAPON_SHOTGUN, //Type
+				pProj->GetWeaponID(), //WeaponID
+				pProj->GetOwner(), //Owner
+				Pos + d, //Pos
+				d * 0.4, //Dir
+				6.0f, // Radius
+				0.33 * pProj->Server()->TickSpeed(), //Span
+				CShotgun::BulletCollide);
+			
+			// pack the Projectile and send it to the client Directly
+			CNetObj_Projectile p;
+			pProjFrag->FillInfo(&p);
+
+			for(unsigned i = 0; i < sizeof(CNetObj_Projectile) / sizeof(int); i++)
+				Msg.AddInt(((int *)&p)[i]);
+		}
+	}
+	/* Hunter End */
+
 	return true;
 }
-/* Hunter Start */
-bool CGrenade::HunterGrenadeCollide(CProjectile *pProj, vec2 Pos, CCharacter *pHit, bool EndOfLife)
-{
-	if(pHit && pHit->GetPlayer()->GetCID() == pProj->GetOwner())
-		return false;
-	
-	pProj->GameWorld()->CreateExplosion(Pos, pProj->GetOwner(), WEAPON_GRENADE, pProj->GetWeaponID(), 20, pProj->GetOwner() < 0);
-	pProj->GameWorld()->CreateSound(Pos, SOUND_GRENADE_EXPLODE);
-
-	pProj->GameWorld()->CreateExplosionParticle(Pos+vec2(50,50));
-	pProj->GameWorld()->CreateExplosionParticle(Pos+vec2(-50,50));
-	pProj->GameWorld()->CreateExplosionParticle(Pos+vec2(50,-50));
-	pProj->GameWorld()->CreateExplosionParticle(Pos+vec2(-50,-50));
-
-	pProj->CreateFragment(pProj->GetOwner(), Pos, CShotgun::BulletCollide);
-
-	return true;
-}
-/* Hunter End */
 
 void CGrenade::Fire(vec2 Direction)
 {
@@ -59,7 +76,7 @@ void CGrenade::Fire(vec2 Direction)
 		Direction, //Dir
 		6.0f, // Radius
 		Lifetime, //Span
-		(GetPlayerClass(ClientID) == CLASS_HUNTER) ? HunterGrenadeCollide : GrenadeCollide);
+		GrenadeCollide);
 
 	// pack the Projectile and send it to the client Directly
 	CNetObj_Projectile p;

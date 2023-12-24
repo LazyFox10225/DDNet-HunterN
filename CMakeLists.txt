@@ -601,12 +601,12 @@ set(EXPECTED_DATA
   languages/traditional_chinese.txt
   languages/turkish.txt
   languages/ukrainian.txt
-  maps/huntern.map
-  maps/huntern.map.cfg
+  maps/huntern_msc.map
+  maps/huntern_msc.map.cfg
   maps/license.txt
   maps/mega_std_collection.map
   maps/mega_std_collection.map.cfg
-  maps7/huntern.map
+  maps7/huntern_msc.map
   maps7/license.txt
   maps7/mega_std_collection.map
   wordlist.txt
@@ -1004,6 +1004,8 @@ set_src(GAME_SERVER GLOB_RECURSE src/game/server
   weapons/grenade.h
   weapons/hammer.cpp
   weapons/hammer.h
+  weapons/jughammer.cpp
+  weapons/jughammer.h
   weapons/lasergun.cpp
   weapons/lasergun.h
   weapons/ninja.cpp
