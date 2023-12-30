@@ -18,11 +18,11 @@ bool CGrenade::GrenadeCollide(CProjectile *pProj, vec2 Pos, CCharacter *pHit, bo
 	if(pHit && pHit->GetPlayer()->GetCID() == pProj->GetOwner())
 		return false;
 
-	pProj->GameWorld()->CreateExplosion(Pos, pProj->GetOwner(), WEAPON_GRENADE, pProj->GetWeaponID(), g_pData->m_Weapons.m_aId[WEAPON_GRENADE].m_Damage, pProj->GetOwner() < 0);
 	pProj->GameWorld()->CreateSound(Pos, SOUND_GRENADE_EXPLODE);
+	pProj->GameWorld()->CreateExplosion(Pos, pProj->GetOwner(), WEAPON_GRENADE, pProj->GetWeaponID(), g_pData->m_Weapons.m_aId[WEAPON_GRENADE].m_Damage, pProj->GetOwner() < 0);
 
 	/* Hunter Start */
-	if(pProj->GameServer()->m_apPlayers[pProj->GetOwner()]->GetClass() == CLASS_HUNTER)
+	if(pProj->GameServer()->m_apPlayers[pProj->GetOwner()]->GetClass() & CLASS_HUNTER)
 	{
 		pProj->GameWorld()->CreateExplosionParticle(Pos+vec2(50,50)); // Create Particle
 		pProj->GameWorld()->CreateExplosionParticle(Pos+vec2(-50,50));
@@ -42,9 +42,9 @@ bool CGrenade::GrenadeCollide(CProjectile *pProj, vec2 Pos, CCharacter *pHit, bo
 				pProj->GetWeaponID(), //WeaponID
 				pProj->GetOwner(), //Owner
 				Pos + d, //Pos
-				d * 0.4, //Dir
+				d * 0.4f, //Dir
 				6.0f, // Radius
-				0.33 * pProj->Server()->TickSpeed(), //Span
+				0.33f * pProj->Server()->TickSpeed(), //Span
 				CShotgun::BulletCollide);
 			
 			// pack the Projectile and send it to the client Directly

@@ -1,7 +1,7 @@
 # hunterN room config
 
 # game settings
-map hunter1
+map hunter2
 timelimit 3
 warmup 0
 powerups 1
@@ -13,9 +13,7 @@ tournament_chat 1
 # room votes
 add_vote " " "info"
 add_vote "=== ROOM SETTINGS ===" "info"
-add_vote "这是HunterN模式 版本0.3a0_p2" "info"
-add_vote "由Huinight开发 于23/12/17上传到服务器" "info"
-add_vote "如有Bug和功能建议到Q群817737873反馈！" "info"
+add_vote "HunterN模式 版本0.3a0_p4" "info"
 add_vote "Restart" "restart"
 
 # add mode switch votes

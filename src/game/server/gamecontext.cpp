@@ -1633,10 +1633,10 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				if(Instance.m_IsCreated && !Instance.m_pController->IsTeamplay() && Instance.m_pController->m_TournamentChat == 2)
 					return;
 
-				if(Instance.m_pController->m_TournamentChat == 2 || (Instance.m_pController->m_TournamentChat == 1 && pPlayer->GetTeam() == TEAM_SPECTATORS))
+				if(Instance.m_pController->m_TournamentChat == 2 || (Instance.m_pController->m_TournamentChat == 1 && ((pPlayer->GetTeam() == TEAM_SPECTATORS) || !(pPlayer->GetCharacter() && pPlayer->GetCharacter()->IsAlive()))))
 					IsTeam = true;
 
-				int ChatTeam = IsTeam ? pPlayer->GetTeam() : CHAT_ALL;
+				int ChatTeam = IsTeam ? ((Instance.m_pController->IsSurvival()) ? TEAM_SPECTATORS : pPlayer->GetTeam()) : CHAT_ALL;
 
 				char aCensoredMessage[256];
 				CensorMessage(aCensoredMessage, pMsg->m_pMessage, sizeof(aCensoredMessage));

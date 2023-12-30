@@ -5,6 +5,7 @@
 #include "huntern.h"
 #include <game/server/entities/character.h>
 #include <game/server/weapons.h>
+#include <game/server/entities/pickup.h>
 #include <game/server/classes.h>
 
 // HunterN commands
@@ -15,9 +16,12 @@ static void ConSetClass(IConsole::IResult *pResult, void *pUserData)
 	CPlayer *pPlayer = pSelf->GetPlayerIfInRoom(pResult->GetInteger(0));
 	if(pPlayer)
 	{
-		pPlayer->SetClass(pResult->GetInteger(1)); // 0 = CIVIC, 1 = HUNTER, 2 = JUG
+		pPlayer->SetClass(pResult->GetInteger(1)); // 0 = CIVIC, 1 = HUNTER, 2 = JUGGERNAUT
 		if(pPlayer->GetCharacter() && pPlayer->GetCharacter()->IsAlive())
+		{
+			pSelf->ResetPlayerClass(pPlayer->GetCharacter());
 			pSelf->OnClassSpawn(pPlayer->GetCharacter());
+		}
 	}
 }
 
@@ -26,49 +30,65 @@ CGameControllerHunterN::CGameControllerHunterN() :
 {
 	m_pGameType = "HunterN";
 	m_GameFlags = IGF_SURVIVAL | IGF_SUDDENDEATH;
+	m_ResetScoreOnEndMatch = false;
+	MatchFlag = -1;
 
 	INSTANCE_CONFIG_INT(&m_HunterRatio, "htn_hunt_ratio", 4, 2, MAX_CLIENTS, CFGFLAG_CHAT | CFGFLAG_INSTANCE, "几个玩家里选取一个猎人（整数,默认4,限制2~64）");
 	INSTANCE_CONFIG_INT(&m_BroadcastHunterList, "htn_hunt_broadcast_list", 0, 0, 1, CFGFLAG_CHAT | CFGFLAG_INSTANCE, "是否全体广播猎人列表（整数,默认0,限制0~1）");
 	INSTANCE_CONFIG_INT(&m_BroadcastHunterDeath, "htn_hunt_broadcast_death", 0, 0, 1, CFGFLAG_CHAT | CFGFLAG_INSTANCE, "是否全体广播猎人死亡（整数,默认0,限制0~1）");
+	INSTANCE_CONFIG_INT(&m_EffectHunterDeath, "htn_hunt_effert_death", 0, 0, 1, CFGFLAG_CHAT | CFGFLAG_INSTANCE, "猎人死亡是否使用出生烟（整数,默认0,限制0~1）");
 	INSTANCE_CONFIG_INT(&m_HuntFragsNum, "htn_hunt_frags_num", 18, 0, 0xFFFFFFF, CFGFLAG_CHAT | CFGFLAG_INSTANCE, "猎人榴弹产生的破片数量（整数,默认18,限制0~268435455）");
 	INSTANCE_CONFIG_INT(&m_Wincheckdeley, "htn_wincheck_deley", 100, 0, 0xFFFFFFF, CFGFLAG_CHAT | CFGFLAG_INSTANCE, "终局判断延时毫秒（整数,默认0,限制0~268435455）");
 	INSTANCE_CONFIG_INT(&m_GameoverTime, "htn_gameover_time", 7, 0, 0xFFFFFFF, CFGFLAG_CHAT | CFGFLAG_INSTANCE, "结算界面时长秒数（整数,默认0,限制0~268435455）");
 	//INSTANCE_CONFIG_INT(&m_RoundMode, "htn_round_mode", 0, 0, 1, CFGFLAG_CHAT | CFGFLAG_INSTANCE, "回合模式 正常0 娱乐1（整数,默认0,限制0~1）");
 
-	InstanceConsole()->Register("htn_setclass", "i[CID] i[class-id]", CFGFLAG_CHAT | CFGFLAG_INSTANCE, ConSetClass, this, "Set team of all players to team");
+	INSTANCE_CONFIG_INT(&MatchFlag, "htn_matchflag", -1, -1, MAX_CLIENTS, CFGFLAG_CHAT | CFGFLAG_INSTANCE, "Jug 正常0 娱乐1（整数,默认0,限制0~1）");
+
+	InstanceConsole()->Register("htn_setclass", "i[CID] i[class-id]", CFGFLAG_CHAT | CFGFLAG_INSTANCE, ConSetClass, this, "给玩家设置职业");
 }
 
-void CGameControllerHunterN::OnClassSpawn(CCharacter *pChr)
+void CGameControllerHunterN::OnClassSpawn(CCharacter *pChr) // 给予武器和职业提示
 {
 	if(pChr->GetPlayer()->GetClass() == CLASS_CIVIC)
 	{
-		pChr->RemoveWeapon(WEAPON_HAMMER);
+		pChr->GiveWeapon(WEAPON_GUN, WEAPON_ID_PISTOL, 10);
 
 		pChr->GameWorld()->CreateSoundGlobal(SOUND_CTF_GRAB_PL, CmaskOne(pChr->GetPlayer()->GetCID()));
 		pChr->GameServer()->SendBroadcast("这局你是平民Civic！噶了所有猎人胜利!     \n猎人双倍伤害 有瞬杀锤子和破片榴弹", pChr->GetPlayer()->GetCID(), true);
 	}
 	else if(pChr->GetPlayer()->GetClass() == CLASS_HUNTER)
 	{
-		pChr->ForceSetWeapon(WEAPON_HAMMER, WEAPON_ID_HAMMER, -1);
+		pChr->GiveWeapon(WEAPON_HAMMER, WEAPON_ID_HAMMER, -1);
+		pChr->GiveWeapon(WEAPON_GUN, WEAPON_ID_PISTOL, 10);
 
 		pChr->GameWorld()->CreateSoundGlobal(SOUND_CTF_GRAB_EN, CmaskOne(pChr->GetPlayer()->GetCID()));
 		pChr->GameServer()->SendBroadcast("     这局你是猎人Hunter！噶了所有平民胜利!\n     猎人双倍伤害 有瞬杀锤子和破片榴弹", pChr->GetPlayer()->GetCID(), true);
 	}
 	else if(pChr->GetPlayer()->GetClass() == CLASS_JUG)
 	{
-		pChr->ForceSetWeapon(WEAPON_HAMMER, WEAPON_ID_JUGHAMMER, -1);
+		pChr->SetPowerUpWeapon(WEAPON_ID_JUGHAMMER, -1);
 
 		pChr->m_MaxHealth = 40;
 		pChr->IncreaseHealth(40);
 		pChr->m_MaxArmor = 20;
 		pChr->IncreaseArmor(20);
-		
-		pChr->GameWorld()->CreateSoundGlobal(SOUND_CTF_GRAB_EN, CmaskOne(pChr->GetPlayer()->GetCID()));
-		pChr->GameServer()->SendBroadcast("     这局你是猎人Hunter！噶了所有平民胜利!\n     猎人双倍伤害 有瞬杀锤子和破片榴弹", pChr->GetPlayer()->GetCID(), true);
+
+		pChr->GameWorld()->CreateSoundGlobal(SOUND_NINJA_FIRE, CmaskOne(pChr->GetPlayer()->GetCID()));
+		pChr->GameServer()->SendBroadcast("     这局你是剑圣Juggernaut！噶了所有人胜利!\n     剑圣40心20盾 有盾反锤子且能斩杀", pChr->GetPlayer()->GetCID(), true);
 	}
 }
 
-void CGameControllerHunterN::SelectClass()
+void CGameControllerHunterN::ResetPlayerClass(CCharacter *pChr)
+{
+	pChr->m_MaxHealth = 10;
+	pChr->IncreaseHealth(10);
+	pChr->m_MaxArmor = 10;
+	pChr->SetArmor(0);
+
+	pChr->RemoveWeapons(); // Remove All Weapons!
+}
+
+void CGameControllerHunterN::SelectClass() // 选择职业
 {
 	int PlayerCount = 0; // 玩家计数
 	int CanHunterPlayerCount = 0; // 最近没当过猎人的玩家的计数
@@ -98,13 +118,36 @@ void CGameControllerHunterN::SelectClass()
 	nHunter = (PlayerCount - 2) / m_HunterRatio + 1;// 我们要多少个猎人
 	str_format(HunterList, sizeof(HunterList), "本回合的 %d 个Hunter是: ", nHunter);// Generate Hunter info message 生成猎人列表消息头
 
-	char aBuf[64];
 	GameServer()->SendChatTarget(-1, "——————欢迎来到HunterN猎人杀——————");
-	str_format(aBuf, sizeof(aBuf), "本回合有 %d 个猎人Hunter has been selected.", nHunter);
-	GameServer()->SendChatTarget(-1, aBuf);
-	GameServer()->SendChatTarget(-1, "规则：每回合秘密抽选猎人 猎人对战平民 活人看不到死人消息");
-	GameServer()->SendChatTarget(-1, "      猎人双倍伤害 有瞬杀锤子(平民无锤)和破片榴弹(对自己无伤)");
-	GameServer()->SendChatTarget(-1, "分辨队友并消灭敌人取得胜利！Be warned! Sudden Death.");
+
+	CPlayer *pPlayer = GetPlayerIfInRoom(MatchFlag);
+	if(pPlayer && pPlayer->GetTeam() != TEAM_SPECTATORS &&
+		(!pPlayer->m_RespawnDisabled ||
+			(pPlayer->GetCharacter() && pPlayer->GetCharacter()->IsAlive()))) // 选择Jug
+	{
+		pPlayer->m_Class = CLASS_JUG;
+		pPlayer->SetTeamDiractly(TEAM_BLUE);
+		if(pPlayer->m_CanHunter)
+			--CanHunterPlayerCount;
+
+		m_GameFlags |= IGF_MARK_TEAMS;
+
+		char aBuf[96];
+		str_format(aBuf, sizeof(aBuf), "本回合 %s 成为了剑圣Juggernaut并与所有人为敌！", Server()->ClientName(pPlayer->GetCID()));
+		GameServer()->SendChatTarget(-1, aBuf);
+		GameServer()->SendChatTarget(-1, "规则：剑圣40心20盾 其锤子能不反弹子弹的前提下斩杀玩家");
+	}
+	else
+	{
+		MatchFlag = -1; // 要成为Jug的玩家不存在 撤了
+
+		char aBuf[64];
+		str_format(aBuf, sizeof(aBuf), "本回合有 %d 个猎人Hunter has been selected.", nHunter);
+		GameServer()->SendChatTarget(-1, aBuf);
+		GameServer()->SendChatTarget(-1, "规则：每回合秘密抽选猎人 猎人对战平民 活人看不到死人消息");
+		GameServer()->SendChatTarget(-1, "      猎人双倍伤害 有瞬杀锤子(平民无锤)和破片榴弹(对自己无伤)");
+		GameServer()->SendChatTarget(-1, "分辨队友并消灭敌人取得胜利！Be warned! Sudden Death.");
+	}
 
 	for(int iHunter = nHunter; iHunter > 0; --iHunter)// 需要选择nHunter个猎人
 	{
@@ -155,31 +198,37 @@ void CGameControllerHunterN::SelectClass()
 
 				if(iHunter == 1) // 最后一次循环 所有玩家都选择了职业
 					if(pPlayer->GetCharacter() && pPlayer->GetCharacter()->IsAlive()) // 这个玩家出生了 所以OnCharacterSpawn已经过了 在这里给他们Class提示和武器
+					{
+						ResetPlayerClass(pPlayer->GetCharacter());
 						OnClassSpawn(pPlayer->GetCharacter());
+					}
+			}
 		}
 	}
-}
 
-	if(!m_BroadcastHunterList)
-	for(int i = 0; i < MAX_CLIENTS; ++i) // 循环所有旁观者 把猎人列表告诉他们
+	if(MatchFlag == -1)
 	{
-		CPlayer *pPlayer = GetPlayerIfInRoom(i);
-		if(pPlayer)
-		{
-				if(pPlayer->GetTeam() == TEAM_SPECTATORS &&
-					!(pPlayer->GetCharacter() && pPlayer->GetCharacter()->IsAlive()))
+		if(!m_BroadcastHunterList)
+			for(int i = 0; i < MAX_CLIENTS; ++i) // 循环所有旁观者 把猎人列表告诉他们
+			{
+				CPlayer *pPlayer = GetPlayerIfInRoom(i);
+				if(pPlayer)
 				{
-					GameServer()->SendChatTarget(pPlayer->GetCID(), HunterList);
+						if(pPlayer->GetTeam() == TEAM_SPECTATORS &&
+							!(pPlayer->GetCharacter() && pPlayer->GetCharacter()->IsAlive()))
+						{
+							GameServer()->SendChatTarget(pPlayer->GetCID(), HunterList);
+					}
+				}
+			}
+		else
+		{
+			GameServer()->SendChatTarget(-1, HunterList);
 		}
 	}
 }
-	else
-	{
-		GameServer()->SendChatTarget(-1, HunterList);
-	}
-}
 
-void CGameControllerHunterN::OnWorldReset()
+void CGameControllerHunterN::OnWorldReset() // 重置部分值和触发职业选择
 {
 	m_GameFlags = IGF_SURVIVAL | IGF_SUDDENDEATH;
 	DoWinchenkClassTick = -1;
@@ -192,42 +241,62 @@ void CGameControllerHunterN::OnCharacterSpawn(CCharacter *pChr)
 	pChr->IncreaseHealth(10);
 	pChr->GiveWeapon(WEAPON_GUN, WEAPON_ID_PISTOL, 10);
 
-	if(m_GameState == IGS_GAME_RUNNING)
+	if(m_GameState == IGS_GAME_RUNNING) // 如果游戏开始
 	{
 		OnClassSpawn(pChr);
 	}
 }
 
-void CGameControllerHunterN::OnPlayerJoin(class CPlayer *pPlayer)
+void CGameControllerHunterN::OnPlayerJoin(class CPlayer *pPlayer) // 使新进旁观者收到猎人列表
 {
-	if((m_GameState == IGS_GAME_RUNNING) && (pPlayer->GetTeam() == TEAM_SPECTATORS) && (HunterList))
+	if((m_GameState == IGS_GAME_RUNNING) && (pPlayer->GetTeam() == TEAM_SPECTATORS))
 	{
 		GameServer()->SendChatTarget(pPlayer->GetCID(), HunterList);
 	}
 }
 
-int CGameControllerHunterN::OnCharacterTakeDamage(class CCharacter *pChr, vec2 &Force, int &Dmg, int From, int WeaponType, int WeaponID, bool IsExplosion)
+int CGameControllerHunterN::OnCharacterTakeDamage(class CCharacter *pChr, vec2 &Force, int &Dmg, int From, int WeaponType, int WeaponID, bool IsExplosion) // 使Hunter不受到自己的伤害
 {
-	if(pChr->GetPlayer()->GetCID() == From && pChr->GetPlayer()->GetClass() == CLASS_HUNTER) // 猎人不能受到来自自己的伤害（这样就不会被逆天榴弹自爆）
+	if(pChr->GetPlayer()->GetCID() == From && pChr->GetPlayer()->GetClass() == CLASS_HUNTER) // Hunter不能受到来自自己的伤害（这样就不会被逆天榴弹自爆）
 		return DAMAGE_NO_DAMAGE | DAMAGE_NO_INDICATOR;
 	return DAMAGE_NORMAL;
 }
 
-void CGameControllerHunterN::ClassWin(int Flag)
+int CGameControllerHunterN::OnPickup(CPickup *pPickup, CCharacter *pChar, SPickupSound *pSound) // Juggernaut不能捡东西
 {
-	if(Flag == (FLAG_WIN_NO_CIVIC | FLAG_WIN_NO_HUNTER))
+	if(pChar->GetPlayer()->m_Class != CLASS_JUG || ((pPickup->GetType() == POWERUP_HEALTH) || (pPickup->GetType() == POWERUP_ARMOR)))
+		return IGameController::OnPickup(pPickup, pChar, pSound);
+	return -1;
+}
+
+void CGameControllerHunterN::ClassWin(int Flag) // 游戏结束
+{
+	if(Flag == (FLAG_WIN_CIVIC | FLAG_WIN_HUNTER))
 	{
 		GameServer()->SendChatTarget(-1, "两人幸终！");
 	}
-	else if(Flag == FLAG_WIN_NO_HUNTER)
+	else if(Flag == FLAG_WIN_HUNTER)
+	{
+		GameServer()->SendChatTarget(-1, "Hunter猎人胜利！");
+		GameWorld()->CreateSoundGlobal(SOUND_CTF_CAPTURE);
+	}
+	else if(Flag == FLAG_WIN_CIVIC)
 	{
 		GameServer()->SendChatTarget(-1, HunterList);
-		GameServer()->SendChatTarget(-1, "平民胜利！");
+		GameServer()->SendChatTarget(-1, "Civic平民胜利！");
 	}
-	else if(Flag == FLAG_WIN_NO_CIVIC)
+	else if(Flag == (FLAG_WIN_JUG | FLAG_WIN_JUG_DEFEAT))
 	{
-		GameServer()->SendChatTarget(-1, "猎人胜利！");
+		GameServer()->SendChatTarget(-1, "两人幸终！");
+	}
+	else if(Flag == FLAG_WIN_JUG)
+	{
+		GameServer()->SendChatTarget(-1, "Juggernaut剑圣胜利！");
 		GameWorld()->CreateSoundGlobal(SOUND_CTF_CAPTURE);
+	}
+	else if(Flag == FLAG_WIN_JUG_DEFEAT)
+	{
+		GameServer()->SendChatTarget(-1, "平民和猎人胜利！");
 	}
 	else if(Flag == FLAG_WIN_NONE)
 	{
@@ -236,22 +305,36 @@ void CGameControllerHunterN::ClassWin(int Flag)
 		GameWorld()->CreateSoundGlobal(SOUND_CTF_CAPTURE);
 	}
 
+	int JugCID = MatchFlag;
+	//MatchFlag = -1;
+
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 	{
 		CPlayer *pPlayer = GetPlayerIfInRoom(i);
 		if(pPlayer)
 		{
+			if(JugCID == -1)
+			{
+				if(pPlayer->m_Class & CLASS_HUNTER)
+				{
+					pPlayer->SetTeamDiractly(TEAM_BLUE); // 结算界面左边红队为民 右边蓝队为猎 玩家默认红队
+					m_aTeamscore[TEAM_BLUE] += (Flag == FLAG_WIN_HUNTER) ? 1 : -1; // 用队伍分数显示有几个猎 正数表示猎人胜利
+				}
+				else if(pPlayer->m_Class & CLASS_CIVIC)
+					m_aTeamscore[TEAM_RED] += (Flag == FLAG_WIN_CIVIC) ? 1 : -1; // 用队伍分数显示有几个民 负数表示猎人胜利
+			}
+			else if(pPlayer->GetCID() == JugCID)
+			{
+				pPlayer->m_Score = 0;
+				pPlayer->m_HiddenScore = 0;
+			}
+			
 			if(pPlayer->GetCharacter() && pPlayer->GetCharacter()->IsAlive())
-				pPlayer->m_Score += 2; // 存活加分
+				pPlayer->m_HiddenScore += 2; // 存活加分
+			if(pPlayer->m_Score > 32 && pPlayer->m_HiddenScore > 8)
+				MatchFlag = pPlayer->GetCID(); // Jug判断
 			if(pPlayer->m_HiddenScore)
 				pPlayer->m_Score += pPlayer->m_HiddenScore; // 添加隐藏分
-			if(pPlayer->m_Class & CLASS_HUNTER)
-			{
-				pPlayer->SetTeamDiractly(TEAM_BLUE); // 结算界面左边红队为民 右边蓝队为猎 玩家默认红队
-				m_aTeamscore[TEAM_BLUE] += (Flag == FLAG_WIN_NO_CIVIC) ? 1 : -1; // 用队伍分数显示有几个猎 正数表示猎人胜利
-			}
-			else if(pPlayer->m_Class & CLASS_CIVIC)
-				m_aTeamscore[TEAM_RED] += (Flag == FLAG_WIN_NO_HUNTER) ? 1 : -1; // 用队伍分数显示有几个民 负数表示猎人胜利
 		}
 	}
 
@@ -274,20 +357,27 @@ void CGameControllerHunterN::DoWincheckClass() // check for class based win
 				(pPlayer->GetCharacter() && pPlayer->GetCharacter()->IsAlive())))
 		{
 			if(pPlayer->m_Class == CLASS_CIVIC)
-			{
 				++CivicCount;
-			}
 			else if(pPlayer->m_Class == CLASS_HUNTER)
-			{
 				++HunterCount;
-			}
 		}
 	}
 
-	if(HunterCount == 0)
-		Flag |= FLAG_WIN_NO_HUNTER;
-	if(CivicCount == 0)
-		Flag |= FLAG_WIN_NO_CIVIC;
+	CPlayer *pPlayer = (GetPlayerIfInRoom(MatchFlag));
+	if(MatchFlag == -1 || (pPlayer && pPlayer->m_Class != CLASS_JUG))
+	{
+		if(!CivicCount)
+			Flag |= FLAG_WIN_HUNTER;
+		if(!HunterCount)
+			Flag |= FLAG_WIN_CIVIC;
+	}
+	else
+	{
+		if(!CivicCount && !HunterCount)
+			Flag |= FLAG_WIN_JUG;
+		if(!(pPlayer && pPlayer->GetCharacter() && pPlayer->GetCharacter()->IsAlive()))
+			Flag |= FLAG_WIN_JUG_DEFEAT;
+	}
 
 	if(Flag)
 		ClassWin(Flag);
@@ -301,15 +391,14 @@ void CGameControllerHunterN::DoWincheckMatch() // check for time based win
 	}
 	else if(DoWinchenkClassTick != -1)
 	{
-		if(DoWinchenkClassTick == 0)
-		{
-			DoWincheckClass();
-		}
 		--DoWinchenkClassTick;
+
+		if(DoWinchenkClassTick == 0)
+			DoWincheckClass();
 	}
 }
 
-int CGameControllerHunterN::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon)
+int CGameControllerHunterN::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon) // 杀手隐藏分增减 和受害人职业死亡消息 以及延时终局
 {
 	if(m_GameState == IGS_GAME_RUNNING)
 	{
@@ -322,6 +411,9 @@ int CGameControllerHunterN::OnCharacterDeath(class CCharacter *pVictim, class CP
 				else
 					pKiller->m_HiddenScore -= 2; // Teamkill
 			}
+
+			if(m_EffectHunterDeath)
+				GameWorld()->CreatePlayerSpawn(pVictim->m_Pos); // 死亡给个出生烟
 
 			char aBuf[48];
 			str_format(aBuf, sizeof(aBuf), "Hunter '%s' was defeated!", Server()->ClientName(pVictim->GetPlayer()->GetCID()));
@@ -367,12 +459,16 @@ int CGameControllerHunterN::OnCharacterDeath(class CCharacter *pVictim, class CP
 
 			GameWorld()->CreateSoundGlobal(SOUND_CTF_DROP);
 		}
+		else if(pVictim->GetPlayer()->GetClass() == CLASS_JUG)
+		{
+			GameServer()->SendChatTarget(-1, "Juggernaut was defeated!");
+			GameWorld()->CreateSoundGlobal(SOUND_CTF_CAPTURE);
+		}
 
-		if(nHunter) // 如果没有猎人 就不要发猎人列表 等EndMatch
-			GameServer()->SendChatTarget(pVictim->GetPlayer()->GetCID(), HunterList);
+		if(nHunter && (MatchFlag != -1))
+			GameServer()->SendChatTarget(pVictim->GetPlayer()->GetCID(), HunterList); // 如果没有猎人 就不要发猎人列表 等EndMatch
 
-		if(DoWinchenkClassTick == -1)
-			DoWinchenkClassTick = (Server()->TickSpeed() * m_Wincheckdeley / 1000);
+		DoWinchenkClassTick = (Server()->TickSpeed() * m_Wincheckdeley / 1000);
 	}
 
 	return DEATH_NO_REASON | DEATH_SKIP_SCORE;

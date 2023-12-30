@@ -415,6 +415,7 @@ IGameController::IGameController()
 	m_NumPlayerNotReady = 0;
 
 	m_HuntFragsNum = 18; // Hunter
+	m_ResetScoreOnEndMatch = true; // Hunter
 
 	// fake client broadcast
 	mem_zero(m_aFakeClientBroadcast, sizeof(m_aFakeClientBroadcast));
@@ -1190,7 +1191,7 @@ void IGameController::OnReset()
 			pPlayer->m_RespawnDisabled = false;
 			pPlayer->Respawn();
 			pPlayer->m_RespawnTick = Server()->Tick() + Server()->TickSpeed() / 2;
-			if(m_RoundCount == 0)
+			if(m_RoundCount == 0 && m_ResetScoreOnEndMatch) // Hunter
 			{
 				pPlayer->m_Score = 0;
 				pPlayer->m_ScoreStartTick = Server()->Tick();

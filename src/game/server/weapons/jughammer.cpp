@@ -1,6 +1,7 @@
 #include "jughammer.h"
 #include <game/generated/server_data.h>
 #include <game/server/entities/projectile.h>
+#include <game/server/entities/laser.h>
 
 CJugHammer::CJugHammer(CCharacter *pOwnerChar) :
 	CWeapon(pOwnerChar)
@@ -8,6 +9,7 @@ CJugHammer::CJugHammer(CCharacter *pOwnerChar) :
 	m_MaxAmmo = g_pData->m_Weapons.m_aId[WEAPON_HAMMER].m_Maxammo;
 	m_AmmoRegenTime = g_pData->m_Weapons.m_aId[WEAPON_HAMMER].m_Ammoregentime;
 	m_FireDelay = g_pData->m_Weapons.m_aId[WEAPON_HAMMER].m_Firedelay;
+	m_FullAuto = true;
 }
 
 void CJugHammer::Fire(vec2 Direction)
@@ -20,24 +22,51 @@ void CJugHammer::Fire(vec2 Direction)
 	if(Character()->IsSolo() || Character()->m_Hit & CCharacter::DISABLE_HIT_HAMMER)
 		return;
 
-	vec2 HammerHitPos = Pos() + Direction * GetProximityRadius() * 3.25f;
+	vec2 HammerHitPos = Pos() + Direction * GetProximityRadius() * 2.75f;
+
+	new CLaser(
+		GameWorld(),
+		WEAPON_GUN, //Type
+		GetWeaponID(), //WeaponID
+		ClientID, //Owner
+		Pos() + Direction * GetProximityRadius() * 4.5f, //Pos
+		-(Direction), //Dir
+		105); // StartEnergy
+
+	new CLaser(
+		GameWorld(),
+		WEAPON_GUN, //Type
+		GetWeaponID(), //WeaponID
+		ClientID, //Owner
+		Pos() + Direction * GetProximityRadius() * 6.75f, //Pos
+		-(Direction), //Dir
+		67); // StartEnergy
 
 	int Hits = 0;
 	CProjectile *apEntsProj[16];
-	int Num = GameWorld()->FindEntities(HammerHitPos, GetProximityRadius() * 100.0f, (CEntity **)apEntsProj,
+	int Num = GameWorld()->FindEntities(HammerHitPos, GetProximityRadius() * 4.0f, (CEntity **)apEntsProj,
 		16, CGameWorld::ENTTYPE_PROJECTILE);
 
 	for(int i = 0; i < Num; ++i)
 	{
 		CProjectile *pTargetProj = apEntsProj[i];
 
-		GameWorld()->CreateExplosionParticle(pTargetProj->m_Pos);
+		if((pTargetProj->m_Type != WEAPON_GRENADE) || (distance(pTargetProj->m_Pos, HammerHitPos) < 52.5f))
+		{
+			GameWorld()->CreateHammerHit(pTargetProj->m_Pos);
 
-		Hits++;
+			pTargetProj->SetStartPos(pTargetProj->m_Pos);
+			pTargetProj->SetStartTick(Server()->Tick());
+			pTargetProj->SetOwner(Character()->GetPlayer()->GetCID());
+			pTargetProj->SetDir(normalize(pTargetProj->m_Pos - Character()->m_Pos) * 0.5f);
+			pTargetProj->m_LifeSpan = 2 * Server()->TickSpeed();
+
+			Hits++;
+		}
 	}
 
 	CCharacter *apEnts[MAX_CLIENTS];
-	Num = GameWorld()->FindEntities(HammerHitPos, GetProximityRadius() * 2.5f, (CEntity **)apEnts,
+	Num = GameWorld()->FindEntities(HammerHitPos, GetProximityRadius() * 0.75f, (CEntity **)apEnts,
 		MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
 
 	for(int i = 0; i < Num; ++i)
@@ -47,12 +76,6 @@ void CJugHammer::Fire(vec2 Direction)
 		//if ((pTarget == this) || GameServer()->Collision()->IntersectLine(ProjStartPos, pTarget->m_Pos, NULL, NULL))
 		if((pTarget == Character() || (pTarget->IsAlive() && pTarget->IsSolo())))
 			continue;
-
-		// set his velocity to fast upward (for now)
-		if(length(pTarget->m_Pos - HammerHitPos) > 0.0f)
-			GameWorld()->CreateHammerHit(pTarget->m_Pos - normalize(pTarget->m_Pos - HammerHitPos) * GetProximityRadius() * 0.5f);
-		else
-			GameWorld()->CreateHammerHit(HammerHitPos);
 
 		vec2 Dir;
 		if(length(pTarget->m_Pos - Pos()) > 0.0f)
@@ -66,7 +89,16 @@ void CJugHammer::Fire(vec2 Direction)
 		Temp = ClampVel(pTarget->m_MoveRestrictions, Temp);
 		Temp -= pTarget->Core()->m_Vel;
 
-		pTarget->TakeDamage((vec2(0.f, -1.0f) + Temp) * Strength, (GetPlayerClass(ClientID) == CLASS_HUNTER) ? 20 : g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage, ClientID, WEAPON_HAMMER, GetWeaponID(), false); // Hunter
+		if(!Hits)
+		{
+			GameWorld()->CreateExplosionParticle(pTarget->m_Pos - Direction);
+			GameWorld()->CreateSound(pTarget->m_Pos, SOUND_GRENADE_EXPLODE);
+		}
+		else
+			GameWorld()->CreateHammerHit(pTarget->m_Pos - Direction);
+
+		pTarget->TakeDamage((vec2(0.f, -1.0f) + Temp) * Strength, (!Hits) ? 20 : 6, // Hunter
+			ClientID, WEAPON_HAMMER, GetWeaponID(), false);
 
 		GameServer()->Antibot()->OnHammerHit(ClientID);
 

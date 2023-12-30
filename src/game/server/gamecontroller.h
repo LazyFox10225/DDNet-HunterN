@@ -276,6 +276,8 @@ protected:
 	// default to: 0
 	int m_DDNetInfoFlag2;
 
+	bool m_ResetScoreOnEndMatch; // Hunter
+
 public:
 	IGameController();
 	virtual ~IGameController();

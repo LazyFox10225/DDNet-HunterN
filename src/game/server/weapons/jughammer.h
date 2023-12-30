@@ -10,6 +10,8 @@ public:
 	CJugHammer(CCharacter *pOwnerChar);
 
 	void Fire(vec2 Direction) override;
+	int GetType() override { return WEAPON_NINJA; }
+	bool IsPowerupOver() override { return false; }
 };
 
 #endif // GAME_SERVER_WEAPONS_JUGHAMMER_H
