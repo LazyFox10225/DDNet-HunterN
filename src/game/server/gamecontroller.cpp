@@ -1692,7 +1692,7 @@ void IGameController::FakeClientBroadcast(int SnappingClient)
 	case IGS_WARMUP_GAME:
 	case IGS_WARMUP_USER:
 		if(m_GameStateTimer == TIMER_INFINITE && pPlayer->GetTeam() != TEAM_SPECTATORS)
-			GameServer()->SendBroadcast("Waiting for more players", SnappingClient, false);
+			GameServer()->SendBroadcast("等待更多的玩家", SnappingClient, false);
 		else
 			GameServer()->SendBroadcast(" ", SnappingClient, false);
 		pState->m_NextBroadcastTick = Server()->Tick() + 5 * Server()->TickSpeed();
@@ -1713,7 +1713,7 @@ void IGameController::FakeClientBroadcast(int SnappingClient)
 	case IGS_GAME_RUNNING:
 		if(pPlayer->m_DeadSpecMode)
 		{
-			GameServer()->SendBroadcast("Wait for next round", SnappingClient, false);
+			GameServer()->SendBroadcast("等待下一个回合", SnappingClient, false);
 			break;
 		}
 		GameServer()->SendBroadcast(" ", SnappingClient, false);
